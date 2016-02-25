@@ -108,7 +108,6 @@ public class KubernetesSeedProvider implements SeedProvider {
         String podNamespace = getEnvOrDefault("POD_NAMESPACE", "default");
         String path = String.format("/api/v1/namespaces/%s/endpoints/", podNamespace);
         try {
-            String token = getServiceAccountToken();
 
             SSLContext ctx = SSLContext.getInstance("SSL");
             ctx.init(null, trustAll, new SecureRandom());
@@ -121,8 +120,13 @@ public class KubernetesSeedProvider implements SeedProvider {
             // with loading the CA cert.
             conn.setSSLSocketFactory(ctx.getSocketFactory());
             conn.setHostnameVerifier(trustAllHosts);
+            
+            try {
+            	String token = getServiceAccountToken();
+            	conn.addRequestProperty("Authorization", "Bearer " + token);
+            }
+            catch(Exception e){}
 
-            conn.addRequestProperty("Authorization", "Bearer " + token);
             ObjectMapper mapper = new ObjectMapper();
             Endpoints endpoints = mapper.readValue(conn.getInputStream(), Endpoints.class);
             if (endpoints != null) {
